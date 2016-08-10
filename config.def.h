@@ -12,7 +12,7 @@ static const char batteryfull[] = "energy_full_design";
 static unsigned int update_interval = 1;
 
 /* statusbar
-- battery_perc (battery percentage) [argument: battery name]
+- battery_perc (battery percentage) [argument: battery name(s)]
 - cpu_perc (cpu usage in percent) [argument: NULL]
 - datetime (date and time) [argument: format]
 - disk_free (disk usage in percent) [argument: mountpoint]

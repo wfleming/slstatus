@@ -51,51 +51,74 @@ smprintf(const char *fmt, ...)
 
 /* battery percentage */
 char *
-battery_perc(const char *battery)
+battery_perc(const char *batteries)
 {
-    int now, full, perc;
-    char batterynowfile[64] = "";
-    char batteryfullfile[64] = "";
-    FILE *fp;
+    int now = 0, full = 0, perc;
 
-    /* generate battery nowfile path */
-    strcat(batterynowfile, batterypath);
-    strcat(batterynowfile, battery);
-    strcat(batterynowfile, "/");
-    strcat(batterynowfile, batterynow);
+    char *memo;
+    char *batsbuf = malloc(sizeof(char) * (1 + strlen(batteries)));
+    strcpy(batsbuf, batteries);
+    //TODO batsbuf will leak in many conditions now
+    char *curbattery = strtok_r(batsbuf, ",", &memo);
 
-    /* generate battery fullfile path */
-    strcat(batteryfullfile, batterypath);
-    strcat(batteryfullfile, battery);
-    strcat(batteryfullfile, "/");
-    strcat(batteryfullfile, batteryfull);
-
-    /* open battery now file */
-    if (!(fp = fopen(batterynowfile, "r"))) {
-        fprintf(stderr, "Error opening battery file.%s",batterynowfile);
-        return smprintf("n/a");
+    if(curbattery == NULL) {
+      fprintf(stderr, "Error getting batteries. %s", batteries);
+      return smprintf("n/a");
     }
 
-    /* read value */
-    fscanf(fp, "%i", &now);
+    while(curbattery != NULL) {
+      int curnow, curfull;
 
-    /* close battery now file */
-    fclose(fp);
+      char batterynowfile[64] = "";
+      char batteryfullfile[64] = "";
+      FILE *fp;
 
-    /* open battery full file */
-    if (!(fp = fopen(batteryfullfile, "r"))) {
-        fprintf(stderr, "Error opening battery file.");
-        return smprintf("n/a");
+      /* generate battery nowfile path */
+      strcat(batterynowfile, batterypath);
+      strcat(batterynowfile, curbattery);
+      strcat(batterynowfile, "/");
+      strcat(batterynowfile, batterynow);
+
+      /* generate battery fullfile path */
+      strcat(batteryfullfile, batterypath);
+      strcat(batteryfullfile, curbattery);
+      strcat(batteryfullfile, "/");
+      strcat(batteryfullfile, batteryfull);
+
+      /* open battery now file */
+      if (!(fp = fopen(batterynowfile, "r"))) {
+          fprintf(stderr, "Error opening battery file.%s",batterynowfile);
+          return smprintf("n/a");
+      }
+
+      /* read value */
+      fscanf(fp, "%i", &curnow);
+      now += curnow;
+
+      /* close battery now file */
+      fclose(fp);
+
+      /* open battery full file */
+      if (!(fp = fopen(batteryfullfile, "r"))) {
+          fprintf(stderr, "Error opening battery file.");
+          return smprintf("n/a");
+      }
+
+      /* read value */
+      fscanf(fp, "%i", &curfull);
+      full += curfull;
+
+      /* close battery full file */
+      fclose(fp);
+
+      /* Get the next battery */
+      curbattery = strtok_r(NULL, ",", &memo);
     }
-
-    /* read value */
-    fscanf(fp, "%i", &full);
-
-    /* close battery full file */
-    fclose(fp);
 
     /* calculate percent */
     perc = now / (full / 100);
+
+    free(batsbuf);
 
     /* return perc as string */
     return smprintf("%d%%", perc);
